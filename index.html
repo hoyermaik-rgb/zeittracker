@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>Zeiterfassung</title>
+
+<meta name="theme-color" content="#060a12">
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Zeittracker">
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d1525'/><circle cx='50' cy='50' r='32' fill='none' stroke='%234f8cff' stroke-width='8'/><path d='M50 28 v22 l12 12' fill='none' stroke='%233ecf8e' stroke-width='7' stroke-linecap='round'/></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d1525'/><circle cx='50' cy='50' r='32' fill='none' stroke='%234f8cff' stroke-width='8'/><path d='M50 28 v22 l12 12' fill='none' stroke='%233ecf8e' stroke-width='7' stroke-linecap='round'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ... ab hier bleibt dein CSS (style) und der Rest exakt gleich! ... */
+:root {
+  --bg: #060a12;
+  --surface: #0d1525;
+  --surface2: #111d34;
+  --border: rgba(99,140,255,0.13);
+  --border-bright: rgba(99,140,255,0.3);
+  --text: #dce8ff;
+  --muted: #6b82b8;
+  --accent: #4f8cff;
+  --accent2: #7eb8ff;
+  --good: #3ecf8e;
+  --warn: #f59e42;
+  --danger: #ff5065;
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,140,255,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 90% 80%, rgba(62,207,142,0.04) 0%, transparent 60%);
+}
+
+/* ── Header ── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,10,18,0.85);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, rgba(79,140,255,0.25), rgba(62,207,142,0.15));
+  border: 1px solid var(--border-bright);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.brand-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.3px;
+  color: #fff;
+}
+.brand-sub { color: var(--muted); font-size: 11px; margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+@media (max-width: 900px) {
+  .app-header { flex-direction: column; align-items: flex-start; }
+  .actions { justify-content: flex-start; }
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+.btn:hover { background: rgba(255,255,255,0.09); border-color: var(--border-bright); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn:active { transform: scale(.97); }
+
+.btn-primary { background: rgba(79,140,255,0.18); border-color: rgba(79,140,255,0.4); color: var(--accent2); }
+.btn-primary:hover { background: rgba(79,140,255,0.28); }
+.btn-secondary { background: rgba(17,29,52,0.8); border-color: rgba(99,140,255,0.2); }
+.btn-good { background: rgba(62,207,142,0.15); border-color: rgba(62,207,142,0.35); color: #7effd0; }
+.btn-good:hover { background: rgba(62,207,142,0.22); }
+.btn-danger { background: rgba(255,80,101,0.12); border-color: rgba(255,80,101,0.3); color: #ff8a96; }
+.btn-danger:hover { background: rgba(255,80,101,0.2); }
+
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s ease;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.09); border-color: var(--border-bright); }
+
+/* ── Tabs Navigation ── */
+.tabs-nav {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px 0;
+  max-width: 800px;
+  margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.tabs-nav::-webkit-scrollbar { display: none; } /* Chrome */
+.tab-btn {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+.tab-btn:hover { border-color: var(--border-bright); color: var(--text); }
+.tab-btn.active {
+  background: rgba(79,140,255,0.15);
+  border-color: rgba(79,140,255,0.5);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(79,140,255,0.1);
+}
+
+/* ── Layout & Views ── */
+.container { padding: 20px 24px; max-width: 800px; margin: 0 auto; }
+.view-section { display: none; animation: fadeIn 0.3s ease; }
+.view-section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 900px) {
+  .container { padding: 14px 16px; }
+  .tabs-nav { padding: 14px 16px 0; }
+}
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(79,140,255,0.03), transparent 60%);
+  pointer-events: none;
+}
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.2px;
+  color: #fff;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-title-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.icon-blue { background: rgba(79,140,255,0.15); }
+.icon-green { background: rgba(62,207,142,0.12); }
+.icon-orange { background: rgba(245,158,66,0.12); }
+.icon-purple { background: rgba(160,100,255,0.12); }
+
+/* ── Timer ── */
+.timer-readout {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 30px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.timer-status {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-family: 'DM Mono', monospace;
+}
+.timer-status.running { color: var(--good); }
+.timer-status.paused { color: var(--warn); }
+.timer-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 56px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+.timer-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.timer-controls button { padding: 12px; font-size: 14px; }
+
+.hint {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(99,140,255,0.2);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  background: rgba(79,140,255,0.03);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ── Form ── */
+.form-row { display: flex; flex-direction: column; gap: 6px; margin: 16px 0; }
+label { color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0.3px; }
+input, select {
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  transition: border-color .15s;
+}
+input:focus, select:focus { border-color: rgba(79,140,255,0.5); background: rgba(79,140,255,0.04); }
+input:disabled { opacity: .5; cursor: not-allowed; }
+select option { background: #0d1525; }
+
+/* ── Calendar ── */
+.calendar-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+.month-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: #fff; flex: 1; text-align: center; }
+.calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 10px; }
+.calendar-weekdays div { text-align: center; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 0; }
+.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.day-cell { border: 1px solid var(--border); background: rgba(0,0,0,0.1); border-radius: 10px; padding: 8px 5px; min-height: 64px; cursor: pointer; position: relative; transition: all .15s ease; }
+.day-cell:hover { background: rgba(79,140,255,0.06); border-color: rgba(79,140,255,0.25); }
+.day-cell.selected { border-color: rgba(79,140,255,0.6); background: rgba(79,140,255,0.12); box-shadow: inset 0 0 0 1px rgba(79,140,255,0.3); }
+.day-cell.muted-day { opacity: .35; }
+.dnum { font-weight: 700; font-size: 13px; text-align: center; margin-bottom: 6px; }
+.badges { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.badge { font-size: 10px; padding: 2px 6px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-weight: 500; }
+.badge-work { border-color: rgba(62,207,142,0.4); color: #a7f7d6; background: rgba(62,207,142,0.1); }
+.badge-vacation { border-color: rgba(79,140,255,0.4); color: #b8d4ff; background: rgba(79,140,255,0.1); }
+.badge-sick { border-color: rgba(245,158,66,0.4); color: #ffd9a0; background: rgba(245,158,66,0.1); }
+
+/* ── Entries table ── */
+.table-wrap { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: rgba(0,0,0,0.12); margin: 16px 0; overflow-x: auto; }
+.table-head { display: grid; grid-template-columns: 40px 1fr 1fr 1fr 70px 40px; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; min-width: 500px; }
+.entry-row { display: grid; grid-template-columns: 40px 1fr 1fr 1fr 70px 40px; gap: 8px; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; min-width: 500px; }
+.entry-row:last-child { border-bottom: 0; }
+.entry-index { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
+.entry-sum { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 14px; color: var(--good); }
+.input-time { width: 100%; }
+
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ── Stats ── */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+@media(min-width: 600px) { .stats { grid-template-columns: 1fr 1fr 1fr; } }
+.stat { background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; transition: border-color .2s; }
+.stat:hover { border-color: var(--border-bright); }
+.stat .label { color: var(--muted); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat .value { margin-top: 8px; font-family: 'DM Mono', monospace; font-weight: 500; font-size: 26px; color: #fff; }
+.stat.highlight .value { color: var(--accent2); }
+.stat.positive .value { color: var(--good); }
+.stat.negative .value { color: var(--danger); }
+
+.year-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+/* ── Toast & Modals ── */
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px); background: rgba(13,21,37,0.95); border: 1px solid var(--border-bright); color: var(--text); padding: 12px 24px; border-radius: 100px; opacity: 0; pointer-events: none; transition: all .2s ease; font-size: 14px; font-weight: 500; backdrop-filter: blur(8px); max-width: calc(100vw - 32px); text-align: center; z-index: 100; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 50; backdrop-filter: blur(4px); }
+.modal { position: fixed; z-index: 51; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(480px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--border-bright); border-radius: var(--radius); padding: 24px; }
+.modal-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: #fff; margin-bottom: 12px; }
+.modal-body { color: var(--text); font-size: 14px; line-height: 1.6; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.section-divider { height: 1px; background: var(--border); margin: 8px 0 20px; }
+
+/* ── Print ── */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 24px; color: #000; font-family: 'Inter', sans-serif; }
+  .print-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+  .print-title { font-size: 20px; font-weight: 800; }
+  .print-sub { color: #555; font-size: 12px; margin-top: 4px; }
+  .print-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .print-table th, .print-table td { border: 1px solid #ccc; padding: 8px 10px; font-size: 12px; }
+  .print-table th { background: #f0f4ff; font-weight: 700; }
+  .signature-box { margin-top: 24px; border: 2px solid #333; padding: 16px; border-radius: 10px; min-height: 100px; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-icon">⏱</div>
+    <div>
+      <div class="brand-title">Zeiterfassung</div>
+      <div class="brand-sub">Privat · Lokal · Sicher</div>
+    </div>
+  </div>
+  <div class="actions">
+    <label class="btn btn-secondary" style="margin:0; cursor:pointer;" title="Daten von anderem Gerät importieren">
+      📂 Import
+      <input type="file" id="btnImportJSON" accept=".json" style="display:none;">
+    </label>
+    <button class="btn btn-secondary" id="btnExportJSON" type="button" title="Daten für anderes Gerät exportieren">💾 Backup</button>
+    <button class="btn btn-secondary" id="btnExportCSV" type="button">↓ CSV</button>
+    <button class="btn btn-secondary" id="btnPrint" type="button">⎙ Drucken</button>
+    <button class="btn btn-danger" id="btnReset" type="button">↺ Reset</button>
+  </div>
+</header>
+
+<nav class="tabs-nav">
+  <button class="tab-btn active" data-target="view-timer">Timer</button>
+  <button class="tab-btn" data-target="view-calendar">Kalender</button>
+  <button class="tab-btn" data-target="view-edit">Bearbeiten</button>
+  <button class="tab-btn" data-target="view-stats">Auswertung</button>
+</nav>
+
+<main class="container">
+
+  <section id="view-timer" class="view-section active">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-title-icon icon-blue">⏱</div>
+        Timer
+      </div>
+      <div class="timer-readout">
+        <div class="timer-status" id="timerStatus">Bereit</div>
+        <div class="timer-time" id="timerTime">00:00:00</div>
+      </div>
+      <div class="form-row">
+        <label for="inputWorkType">Tagtyp für heute</label>
+        <select id="inputWorkType">
+          <option value="arbeit" selected>🟢 Arbeit</option>
+          <option value="urlaub">🔵 Urlaub</option>
+          <option value="krank">🟡 Krank</option>
+        </select>
+      </div>
+      <div class="timer-controls">
+        <button class="btn btn-good" id="btnStart" type="button">▶ Start</button>
+        <button class="btn btn-danger" id="btnStop" type="button" disabled>⏹ Stop</button>
+        <button class="btn btn-secondary" id="btnPause" type="button" disabled>⏸ Pause</button>
+        <button class="btn btn-primary" id="btnResume" type="button" disabled>▷ Weiter</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-calendar" class="view-section">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-title-icon icon-purple">📅</div>
+        Kalender
+      </div>
+      <div class="calendar-nav">
+        <button class="icon-btn" id="btnPrevMonth" type="button" aria-label="Vorheriger Monat">‹</button>
+        <div class="month-label" id="monthLabel"></div>
+        <button class="icon-btn" id="btnNextMonth" type="button" aria-label="Nächster Monat">›</button>
+      </div>
+      <div class="calendar-weekdays">
+        <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
+      </div>
+      <div class="calendar" id="calendar"></div>
+      <div class="hint">💡 Klicke auf einen Tag, um direkt zur Bearbeitung zu springen.</div>
+    </div>
+  </section>
+
+  <section id="view-edit" class="view-section">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-title-icon icon-orange">✏️</div>
+        Tag bearbeiten
+      </div>
+      <div class="form-row">
+        <label for="selectedDate">Ausgewähltes Datum (Im Kalender ändern)</label>
+        <input id="selectedDate" type="text" disabled/>
+      </div>
+      <div class="form-row">
+        <label for="editWorkType">Tagtyp</label>
+        <select id="editWorkType">
+          <option value="arbeit" selected>🟢 Arbeit</option>
+          <option value="urlaub">🔵 Urlaub</option>
+          <option value="krank">🟡 Krank</option>
+        </select>
+      </div>
+      <div class="section-divider"></div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <div>#</div>
+          <div>Start</div>
+          <div>Ende</div>
+          <div>Pause (min)</div>
+          <div>Summe</div>
+          <div></div>
+        </div>
+        <div id="entriesEditor"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="btnAddEntry" type="button">+ Intervall hinzufügen</button>
+        <button class="btn btn-good" id="btnSaveDay" type="button">✓ Änderungen speichern</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-stats" class="view-section">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-title-icon icon-green">📊</div>
+        Jahresauswertung
+      </div>
+      <div class="form-row">
+        <label for="inputYear">Jahr</label>
+        <input id="inputYear" type="number" min="2000" max="2100"/>
+      </div>
+      <div class="form-row">
+        <label for="workdayHours">Sollstunden pro Arbeitstag</label>
+        <input id="workdayHours" type="number" step="0.25" min="0"/>
+      </div>
+      <div class="form-row">
+        <label for="weekends">Arbeitstage</label>
+        <select id="weekends">
+          <option value="1" selected>Nur Mo–Fr zählen</option>
+          <option value="0">Alle Tage (Mo-So) zählen</option>
+        </select>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Arbeitstage</div>
+          <div class="value" id="statWorkdays">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Urlaubstage</div>
+          <div class="value" id="statVacation">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Krankheitstage</div>
+          <div class="value" id="statSick">0</div>
+        </div>
+        <div class="stat highlight">
+          <div class="label">Gesamt (Ist)</div>
+          <div class="value" id="statTotalHours">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Gesamt (Soll)</div>
+          <div class="value" id="statSollHours">0</div>
+        </div>
+        <div class="stat" id="statOvertimeCard">
+          <div class="label">Überstunden</div>
+          <div class="value" id="statOvertime">0</div>
+        </div>
+      </div>
+      <div class="year-actions">
+        <button class="btn btn-secondary" id="btnExportCSVYear" type="button">↓ CSV (Ausgewähltes Jahr)</button>
+        <div class="hint" style="margin-top:0;">Bei Urlaub und Krankheit werden die Stunden des Tages als 0 gewertet, die Sollarbeitszeit bleibt aber unberührt (sofern es ein Arbeitstag ist).</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="modalOverlay" class="modal-overlay" hidden></div>
+<div id="modal" class="modal" hidden>
+  <div class="modal-title" id="modalTitle"></div>
+  <div class="modal-body" id="modalBody"></div>
+  <div class="modal-actions">
+    <button class="btn btn-secondary" id="modalCancel" type="button">Abbrechen</button>
+    <button class="btn btn-danger" id="modalOk" type="button">OK</button>
+  </div>
+</div>
+
+<script>
+// ======================
+// Zeittracker Logik
+// ======================
+const STORAGE_KEY = "zeittracker_v2";
+
+const DEFAULT_STATE = () => {
+  const now = new Date();
+  return {
+    version: 1,
+    settings: { workdayHours: 8, countMoFrOnly: true, yearForStats: now.getFullYear() },
+    entries: {},
+    timerState: { status: "idle", runningStartedAt: null, workType: "arbeit", activeDate: null, activeInterval: null }
+  };
+};
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+function dateKey(d){ const dd=(d instanceof Date)?d:new Date(d); return `${dd.getFullYear()}-${pad2(dd.getMonth()+1)}-${pad2(dd.getDate())}`; }
+function parseTimeToMinutes(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60+m; }
+function formatDurationHMS(totalSeconds){ const s=Math.max(0,Math.floor(totalSeconds)); return `${pad2(Math.floor(s/3600))}:${pad2(Math.floor((s%3600)/60))}:${pad2(s%60)}`; }
+function safeJsonParse(str){ try{ return JSON.parse(str); } catch{ return null; } }
+
+function loadState(){
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw) return DEFAULT_STATE();
+  const parsed=safeJsonParse(raw);
+  if(!parsed||typeof parsed!=="object") return DEFAULT_STATE();
+  const base=DEFAULT_STATE();
+  return {...base,...parsed,settings:{...base.settings,...(parsed.settings||{})}};
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
+
+let state=loadState();
+
+// --- Tab Navigation ---
+const tabBtns = document.querySelectorAll('.tab-btn');
+const viewSections = document.querySelectorAll('.view-section');
+
+function switchTab(targetId) {
+  tabBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.target === targetId);
+  });
+  viewSections.forEach(sec => {
+    sec.classList.toggle('active', sec.id === targetId);
+  });
+}
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', (e) => switchTab(e.target.dataset.target));
+});
+
+// --- Toast & Modals ---
+function toast(msg){
+  const el=document.getElementById("toast");
+  el.textContent=msg;
+  el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"),3000);
+}
+
+function openConfirmModal({title,body,okText="OK",onOk}){
+  const overlay=document.getElementById("modalOverlay"); const modal=document.getElementById("modal");
+  document.getElementById("modalTitle").textContent=title;
+  document.getElementById("modalBody").textContent=body;
+  document.getElementById("modalOk").textContent=okText;
+  overlay.hidden=false; modal.hidden=false;
+  const cleanup=()=>{ overlay.hidden=true; modal.hidden=true; };
+  document.getElementById("modalCancel").onclick=cleanup;
+  document.getElementById("modalOk").onclick=()=>{ cleanup(); onOk?.(); };
+}
+document.getElementById("modalOverlay").addEventListener("click",()=>{ document.getElementById("modalOverlay").hidden=true; document.getElementById("modal").hidden=true; });
+
+// --- Core Logic ---
+function ensureDay(key){
+  if(!state.entries[key]) state.entries[key]={workType:"arbeit",intervals:[]};
+  if(!Array.isArray(state.entries[key].intervals)) state.entries[key].intervals=[];
+  if(!state.entries[key].workType) state.entries[key].workType="arbeit";
+}
+function getDay(key){ ensureDay(key); return state.entries[key]; }
+
+function intervalSumHours(interval){
+  if(!interval||!interval.start||!interval.end) return 0;
+  const raw=parseTimeToMinutes(interval.end)-parseTimeToMinutes(interval.start)-(Number(interval.pauseMin)||0);
+  return Math.max(0,raw)/60;
+}
+function dayTotalHours(dayKey){
+  const day=getDay(dayKey);
+  if(day.workType!=="arbeit") return 0;
+  return day.intervals.reduce((acc,it)=>acc+intervalSumHours(it),0);
+}
+
+// --- Timer ---
+let tickHandle=null;
+function getLocalHHMM(epochMs){ const d=new Date(epochMs); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+
+function currentTimerSeconds(){
+  const ts=state.timerState;
+  if(ts.status==="idle") return 0;
+  const activeInterval=ts.activeInterval||{pauseMinAccum:0};
+  let endEpoch=Date.now();
+  if(ts.status==="paused") endEpoch=ts.activeInterval?.pausedAtEpoch??Date.now();
+  const elapsedSeconds=Math.max(0,Math.floor((endEpoch-ts.runningStartedAt)/1000));
+  const pauseSeconds=(Number(activeInterval.pauseMinAccum)||0)*60;
+  return Math.max(0,elapsedSeconds-pauseSeconds);
+}
+
+function updateTimerUI(){
+  const ts=state.timerState;
+  const statusEl=document.getElementById("timerStatus");
+  const timeEl=document.getElementById("timerTime");
+  statusEl.className="timer-status";
+  if(ts.status==="idle"){ statusEl.textContent="Bereit"; timeEl.textContent="00:00:00"; return; }
+  if(ts.status==="running"){ statusEl.textContent="Läuft"; statusEl.classList.add("running"); }
+  else if(ts.status==="paused"){ statusEl.textContent="Pausiert"; statusEl.classList.add("paused"); }
+  timeEl.textContent=formatDurationHMS(currentTimerSeconds());
+}
+
+function startTimer(){
+  const ts=state.timerState;
+  if(ts.status!=="idle"){ toast("Timer läuft bereits."); return; }
+  const workType=document.getElementById("inputWorkType").value;
+  const todayKey=dateKey(new Date());
+  ts.status="running"; ts.workType=workType; ts.activeDate=todayKey; ts.runningStartedAt=Date.now();
+  ts.activeInterval={ start:getLocalHHMM(ts.runningStartedAt), pauseMinAccum:0, pausedAtEpoch:null };
+  saveState(); syncTimerButtons(); updateTimerUI(); ensureTicking();
+  selectDayInternal(todayKey);
+  document.getElementById("editWorkType").value=workType;
+  toast("▶ Timer gestartet");
+}
+
+function pauseTimer(){
+  const ts=state.timerState;
+  if(ts.status!=="running") return;
+  ts.status="paused"; ts.activeInterval.pausedAtEpoch=Date.now();
+  saveState(); syncTimerButtons(); updateTimerUI(); toast("⏸ Pausiert");
+}
+
+function resumeTimer(){
+  const ts=state.timerState;
+  if(ts.status!=="paused") return;
+  const diffMin=Math.max(0,Math.round((Date.now()-ts.activeInterval.pausedAtEpoch)/60000));
+  ts.activeInterval.pauseMinAccum=(Number(ts.activeInterval.pauseMinAccum)||0)+diffMin;
+  ts.status="running"; ts.runningStartedAt=Date.now(); ts.activeInterval.pausedAtEpoch=null;
+  saveState(); syncTimerButtons(); updateTimerUI(); ensureTicking(); toast("▷ Weiter");
+}
+
+function stopTimer(){
+  const ts=state.timerState;
+  if(ts.status==="idle") return;
+  const todayKey=ts.activeDate||dateKey(new Date());
+  const day=getDay(todayKey);
+  const workType=ts.workType||"arbeit";
+  day.workType=workType;
+  if(workType==="arbeit"){
+    day.intervals.push({ start:ts.activeInterval?.start||getLocalHHMM(Date.now()), end:getLocalHHMM(Date.now()), pauseMin:Number(ts.activeInterval?.pauseMinAccum)||0 });
+  }
+  state.timerState={ status:"idle", runningStartedAt:null, workType:"arbeit", activeDate:null, activeInterval:null };
+  saveState(); syncTimerButtons(); updateTimerUI();
+  toast("⏹ Gestoppt & gespeichert");
+  selectDayInternal(todayKey);
+  updateYearStats();
+}
+
+function ensureTicking(){ if(tickHandle) return; tickHandle=setInterval(updateTimerUI,500); }
+function syncTimerButtons(){
+  const ts=state.timerState;
+  document.getElementById("btnStart").disabled=(ts.status!=="idle");
+  document.getElementById("btnPause").disabled=(ts.status!=="running");
+  document.getElementById("btnResume").disabled=(ts.status!=="paused");
+  document.getElementById("btnStop").disabled=(ts.status==="idle");
+}
+
+// --- Calendar ---
+let viewMonth=new Date(); viewMonth.setDate(1);
+let selectedDayKey=dateKey(new Date());
+
+function monthLabel(){ return new Intl.DateTimeFormat("de-DE",{month:"long",year:"numeric"}).format(viewMonth); }
+function getWeekdayMon0(date){ return (date.getDay()+6)%7; }
+
+function renderCalendar(){
+  const cal=document.getElementById("calendar");
+  cal.innerHTML="";
+  document.getElementById("monthLabel").textContent=monthLabel();
+  const year=viewMonth.getFullYear(), month=viewMonth.getMonth();
+  const first=new Date(year,month,1);
+  const startOffset=getWeekdayMon0(first);
+  const totalCells=42;
+  for(let i=0;i<totalCells;i++){
+    const cellDate=new Date(year,month,1);
+    cellDate.setDate(cellDate.getDate()+(i-startOffset));
+    const key=dateKey(cellDate);
+    const dayCell=document.createElement("div");
+    dayCell.className="day-cell";
+    if(cellDate.getMonth()!==month) dayCell.classList.add("muted-day");
+    if(key===selectedDayKey) dayCell.classList.add("selected");
+    const dnum=document.createElement("div"); dnum.className="dnum"; dnum.textContent=cellDate.getDate();
+    const badges=document.createElement("div"); badges.className="badges";
+    const day=state.entries[key];
+    if(day?.workType==="urlaub"){ const b=document.createElement("div"); b.className="badge badge-vacation"; b.textContent="Url"; badges.appendChild(b); }
+    else if(day?.workType==="krank"){ const b=document.createElement("div"); b.className="badge badge-sick"; b.textContent="Krank"; badges.appendChild(b); }
+    else if(day?.workType==="arbeit"&&(day.intervals?.length||0)>0){
+      const total=dayTotalHours(key);
+      const b=document.createElement("div"); b.className="badge badge-work";
+      b.textContent=total>0?`${total.toFixed(1)}h`:"✓"; badges.appendChild(b);
+    }
+    dayCell.appendChild(dnum); dayCell.appendChild(badges);
+    
+    // Jump to edit tab when clicking a day
+    dayCell.addEventListener("click",()=>{
+      selectDayInternal(key);
+      switchTab("view-edit");
+    });
+    cal.appendChild(dayCell);
+  }
+}
+
+function selectDayInternal(key){ selectedDayKey=key; renderCalendar(); renderDayEditor(); }
+
+// --- Day Editor ---
+function renderDayEditor(){
+  const key=selectedDayKey;
+  const day=getDay(key);
+  document.getElementById("selectedDate").value=key;
+  document.getElementById("editWorkType").value=day.workType||"arbeit";
+  const container=document.getElementById("entriesEditor");
+  container.innerHTML="";
+  const intervals=day.intervals||[];
+  if(intervals.length===0){
+    const empty=document.createElement("div");
+    empty.className="entry-row";
+    empty.style.color="var(--muted)";
+    empty.style.fontSize="12px";
+    empty.style.gridColumn="1/-1";
+    empty.style.justifyContent="center";
+    empty.style.display="flex";
+    empty.textContent="Keine Einträge für diesen Tag.";
+    container.appendChild(empty);
+    return;
+  }
+  intervals.forEach((it,idx)=>{
+    const row=document.createElement("div"); row.className="entry-row";
+    row.dataset.idx=String(idx);
+    const idxEl=document.createElement("div"); idxEl.className="entry-index"; idxEl.textContent=`#${idx+1}`;
+    const startInp=document.createElement("input"); startInp.className="input-time"; startInp.type="time"; startInp.value=it.start||"09:00";
+    const endInp=document.createElement("input"); endInp.className="input-time"; endInp.type="time"; endInp.value=it.end||"17:00";
+    const pauseInp=document.createElement("input"); pauseInp.type="number"; pauseInp.min="0"; pauseInp.step="1"; pauseInp.value=it.pauseMin??0; pauseInp.style.width="100%";
+    const sumEl=document.createElement("div"); sumEl.className="entry-sum";
+    const recalc=()=>{ sumEl.textContent=`${intervalSumHours({start:startInp.value,end:endInp.value,pauseMin:Number(pauseInp.value)||0}).toFixed(1)}h`; };
+    recalc();
+    [startInp,endInp,pauseInp].forEach(inp=>inp.addEventListener("input",recalc));
+    const delBtn=document.createElement("button"); delBtn.type="button"; delBtn.className="btn btn-danger"; delBtn.style.padding="8px"; delBtn.textContent="✕";
+    delBtn.addEventListener("click",()=>{ day.intervals.splice(idx,1); saveState(); renderDayEditor(); renderCalendar(); updateYearStats(); toast("Intervall gelöscht"); });
+    const cStart=document.createElement("div"); cStart.appendChild(startInp);
+    const cEnd=document.createElement("div"); cEnd.appendChild(endInp);
+    const cPause=document.createElement("div"); cPause.appendChild(pauseInp);
+    const cDel=document.createElement("div"); cDel.appendChild(delBtn);
+    row.appendChild(idxEl); row.appendChild(cStart); row.appendChild(cEnd); row.appendChild(cPause); row.appendChild(sumEl); row.appendChild(cDel);
+    row._startInp=startInp; row._endInp=endInp; row._pauseInp=pauseInp;
+    container.appendChild(row);
+  });
+}
+
+function readEditorIntervalsIntoDay(){
+  const day=getDay(selectedDayKey);
+  const rows=Array.from(document.querySelectorAll("#entriesEditor .entry-row")).filter(r=>r.dataset.idx!==undefined);
+  if(!rows.length){ day.intervals=[]; return; }
+  day.intervals=rows.map(row=>({ start:row._startInp?.value||"09:00", end:row._endInp?.value||"17:00", pauseMin:Math.max(0,Number(row._pauseInp?.value??0)) }));
+}
+
+document.getElementById("btnAddEntry").addEventListener("click",()=>{
+  const day=getDay(selectedDayKey);
+  if(day.workType!=="arbeit") day.workType="arbeit";
+  document.getElementById("editWorkType").value="arbeit";
+  day.intervals.push({start:"09:00",end:"17:00",pauseMin:0});
+  saveState(); renderDayEditor(); renderCalendar(); updateYearStats();
+});
+
+document.getElementById("btnSaveDay").addEventListener("click",()=>{
+  const day=getDay(selectedDayKey);
+  day.workType=document.getElementById("editWorkType").value;
+  readEditorIntervalsIntoDay();
+  saveState(); renderDayEditor(); renderCalendar(); updateYearStats(); toast("✓ Änderungen gespeichert");
+});
+
+// --- Stats ---
+function updateYearStats(){
+  const year=Number(document.getElementById("inputYear").value);
+  state.settings.yearForStats=year;
+  state.settings.workdayHours=Number(document.getElementById("workdayHours").value);
+  state.settings.countMoFrOnly=document.getElementById("weekends").value==="1";
+  saveState();
+  let workdays=0,vacation=0,sick=0,totalHours=0;
+  for(const key of Object.keys(state.entries||{})){
+    const [y,mm,dd]=key.split("-").map(Number);
+    if(y!==year) continue;
+    const day=state.entries[key];
+    const t=day.workType||"arbeit";
+    const dateObj=new Date(year,mm-1,dd);
+    const isMoFr=dateObj.getDay()>=1&&dateObj.getDay()<=5;
+    const counts=state.settings.countMoFrOnly?isMoFr:true;
+    if(!counts) continue;
+    if(t==="urlaub") vacation++;
+    else if(t==="krank") sick++;
+    else if(t==="arbeit" && day.intervals?.length > 0) workdays++; // Only count if hours logged
+    totalHours+=(t==="arbeit")?dayTotalHours(key):0;
+  }
+  const sollHours=workdays*state.settings.workdayHours;
+  const overtime=totalHours-sollHours;
+  document.getElementById("statWorkdays").textContent=String(workdays);
+  document.getElementById("statVacation").textContent=String(vacation);
+  document.getElementById("statSick").textContent=String(sick);
+  document.getElementById("statTotalHours").textContent=totalHours.toFixed(1);
+  document.getElementById("statSollHours").textContent=sollHours.toFixed(1);
+  document.getElementById("statOvertime").textContent=(overtime>=0?"+":"")+overtime.toFixed(1);
+  const card=document.getElementById("statOvertimeCard");
+  card.className="stat "+(overtime>0?"positive":overtime<0?"negative":"");
+}
+
+// --- Im / Export & CSV ---
+function toCSV(rows){ return rows.map(r=>r.map(v=>{ const s=String(v??""); return /[",\n;]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }).join(";")).join("\n"); }
+
+function downloadText(filename,text,mime="text/plain"){
+  const blob=new Blob([text],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+
+// JSON BACKUP (EXPORT)
+document.getElementById("btnExportJSON").addEventListener("click", () => {
+  const dataStr = JSON.stringify(state, null, 2);
+  downloadText(`zeittracker_backup_${dateKey(new Date())}.json`, dataStr, "application/json");
+  toast("💾 Backup-Datei heruntergeladen");
+});
+
+// JSON RESTORE (IMPORT)
+document.getElementById("btnImportJSON").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const importedState = JSON.parse(ev.target.result);
+      if (importedState && importedState.version) {
+        state = importedState;
+        saveState();
+        init(); // Refresh UI
+        toast("📂 Daten erfolgreich importiert!");
+      } else {
+        toast("❌ Fehler: Ungültige Datei-Struktur");
+      }
+    } catch(err) {
+      toast("❌ Fehler beim Lesen der Datei");
+    }
+    e.target.value = ""; // Reset file input
+  };
+  reader.readAsText(file);
+});
+
+
+function exportCSVAllIntervals(){
+  const rows=[["Datum","Tagtyp","Start","Ende","Pausenmin","Stundensumme"]];
+  for(const key of Object.keys(state.entries||{}).sort()){
+    const day=state.entries[key]; const t=day.workType||"arbeit";
+    if(t!=="arbeit"||!day.intervals?.length){ rows.push([key,t,"","","","0.0"]); continue; }
+    for(const it of day.intervals) rows.push([key,t,it.start,it.end,Number(it.pauseMin)||0,intervalSumHours(it).toFixed(2)]);
+  }
+  return toCSV(rows);
+}
+function exportCSVYear(){
+  const year=Number(document.getElementById("inputYear").value);
+  const rows=[["Datum","Tagtyp","Start","Ende","Pausenmin","Stundensumme"]];
+  for(const key of Object.keys(state.entries||{}).sort()){
+    const [y]=key.split("-").map(Number); if(y!==year) continue;
+    const day=state.entries[key]; const t=day.workType||"arbeit";
+    if(t!=="arbeit"||!day.intervals?.length){ rows.push([key,t,"","","","0.0"]); continue; }
+    for(const it of day.intervals) rows.push([key,t,it.start,it.end,Number(it.pauseMin)||0,intervalSumHours(it).toFixed(2)]);
+  }
+  return toCSV(rows);
+}
+
+// Print
+function buildPrintHTML(){
+  const year=Number(document.getElementById("inputYear").value);
+  const dayKeys=Object.keys(state.entries||{}).filter(k=>Number(k.split("-")[0])===year).sort();
+  const rows=dayKeys.map(key=>{
+    const day=state.entries[key]; const t=day.workType||"arbeit";
+    const hours=dayTotalHours(key);
+    const ivText=(t==="arbeit"&&day.intervals?.length)?day.intervals.map(it=>`${it.start}–${it.end} (${Number(it.pauseMin)||0}min Pause)`).join("<br/>"):"";
+    return `<tr><td>${key}</td><td>${t==="arbeit"?"Arbeit":t==="urlaub"?"Urlaub":"Krank"}</td><td>${ivText||"&nbsp;"}</td><td>${hours.toFixed(1)}</td></tr>`;
+  });
+  return `<div class="print-area">
+    <div class="print-header">
+      <div><div class="print-title">Zeiterfassung – Jahresübersicht ${year}</div><div class="print-sub">Erstellt am ${new Intl.DateTimeFormat("de-DE").format(new Date())}</div></div>
+    </div>
+    <table class="print-table"><thead><tr><th>Datum</th><th>Tagtyp</th><th>Intervalle</th><th>Stunden</th></tr></thead>
+    <tbody>${rows.length?rows.join(""):`<tr><td colspan="4">Keine Daten für ${year}.</td></tr>`}</tbody></table>
+    <div class="signature-box">
+      <div style="font-weight:800;margin-bottom:10px;">Auswertung</div>
+      <div>Arbeitstage: <b>${document.getElementById("statWorkdays").textContent}</b> · Urlaubstage: <b>${document.getElementById("statVacation").textContent}</b> · Krankheitstage: <b>${document.getElementById("statSick").textContent}</b></div>
+      <div style="margin-top:6px;">Gesamtstunden: <b>${document.getElementById("statTotalHours").textContent}h</b> · Sollstunden: <b>${document.getElementById("statSollHours").textContent}h</b> · Überstunden: <b>${document.getElementById("statOvertime").textContent}h</b></div>
+      <div style="margin-top:16px;font-weight:700;">Unterschrift</div>
+      <div style="margin-top:8px;color:#555;">Ort / Datum: ___________________________&nbsp;&nbsp;&nbsp; Unterschrift: ________________________</div>
+    </div>
+  </div>`;
+}
+
+document.getElementById("btnPrint").addEventListener("click",()=>{
+  updateYearStats();
+  let el=document.getElementById("printContainer");
+  if(!el){ el=document.createElement("div"); el.id="printContainer"; document.body.appendChild(el); }
+  el.innerHTML=buildPrintHTML();
+  window.print();
+});
+document.getElementById("btnExportCSV").addEventListener("click",()=>{ downloadText(`zeitaufzeichnung_all_${dateKey(new Date())}.csv`,exportCSVAllIntervals(),"text/csv;charset=utf-8"); toast("↓ CSV exportiert"); });
+document.getElementById("btnExportCSVYear").addEventListener("click",()=>{ downloadText(`zeitaufzeichnung_${document.getElementById("inputYear").value}.csv`,exportCSVYear(),"text/csv;charset=utf-8"); toast("↓ CSV Jahr exportiert"); });
+
+// Reset
+document.getElementById("btnReset").addEventListener("click",()=>{
+  openConfirmModal({ title:"Daten zurücksetzen?", body:"Alle gespeicherten Zeitdaten werden lokal gelöscht.", okText:"Löschen",
+    onOk:()=>{
+      state=DEFAULT_STATE(); saveState(); selectedDayKey=dateKey(new Date()); viewMonth=new Date(); viewMonth.setDate(1);
+      document.getElementById("inputYear").value=state.settings.yearForStats;
+      document.getElementById("workdayHours").value=state.settings.workdayHours;
+      document.getElementById("weekends").value="1";
+      renderCalendar(); renderDayEditor(); updateYearStats(); syncTimerButtons(); updateTimerUI(); toast("Daten gelöscht");
+    }
+  });
+});
+
+// Event Listeners
+document.getElementById("btnPrevMonth").addEventListener("click",()=>{ viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-1,1); renderCalendar(); });
+document.getElementById("btnNextMonth").addEventListener("click",()=>{ viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()+1,1); renderCalendar(); });
+document.getElementById("btnStart").addEventListener("click",startTimer);
+document.getElementById("btnPause").addEventListener("click",pauseTimer);
+document.getElementById("btnResume").addEventListener("click",resumeTimer);
+document.getElementById("btnStop").addEventListener("click",stopTimer);
+document.getElementById("inputWorkType").addEventListener("change",e=>{ state.timerState.workType=e.target.value; saveState(); });
+document.getElementById("inputYear").addEventListener("change",updateYearStats);
+document.getElementById("workdayHours").addEventListener("change",updateYearStats);
+document.getElementById("weekends").addEventListener("change",updateYearStats);
+
+// Init
+function init(){
+  document.getElementById("inputYear").value=state.settings.yearForStats??new Date().getFullYear();
+  document.getElementById("workdayHours").value=state.settings.workdayHours??8;
+  document.getElementById("weekends").value=(state.settings.countMoFrOnly??true)?"1":"0";
+  document.getElementById("inputWorkType").value=state.timerState.workType||"arbeit";
+  selectedDayKey=dateKey(new Date());
+  viewMonth=new Date(); viewMonth.setDate(1);
+  renderCalendar(); selectDayInternal(selectedDayKey);
+  syncTimerButtons(); updateTimerUI();
+  if(state.timerState.status!=="idle") ensureTicking();
+  updateYearStats();
+}
+init();
+</script>
+</body>
+</html>
